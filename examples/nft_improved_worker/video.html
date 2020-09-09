@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>NFT marker example with a WebWorker and Three.js</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=0.5, maximum-scale=1">
+	<link rel="stylesheet" href="../css/video-style.css">
+	<script type="text/javascript" src="../../../ar/js/vendor/jquery.min.js"></script>
+	<script src="../js/third_party/three.js/stats.min.js"></script>
+    <script src="../js/third_party/three.js/three.min.js"></script>
+    <script src="threex.chromakey.js"></script>
+    <script src="play-video.js"></script>
+    <script type="text/javascript" src="../../../ar/js/ar-vendor/aframe-master.js"></script>
+    <script type="text/javascript" src="../../../ar/js/ar-vendor/aframe-chromakey-material.min.js"></script>
+	
+</head>
+<body class="loading">
+	<div id="loading" >
+			<img  src="../Data/logo.gif"/>
+			<span class="loading-text">Loading, please wait</span>
+	</div>
+  <!--
+  ==================
+  STATS
+  ==================
+  -->
+
+      <div id="stats" class="ui stats">
+
+          <div id="stats1" class="stats-item">
+              <p class="stats-item-title">
+                  Main
+              </p>
+          </div>
+
+          <div id="stats2" class="stats-item">
+              <p class="stats-item-title">
+                  Worker
+              </p>
+          </div>
+      </div>
+
+  <!--
+  ==================
+  CAMERA VIDEO & CANVAS
+  ==================
+  -->
+
+      <div id="app">
+          <video
+              loop
+              autoplay
+              playsinline
+              id="video">
+          </video>
+          <canvas id="canvas" style="position: fixed; width: 100%; height: 100%;"></canvas>
+          <a-scene  vr-mode-ui="enabled: false;"
+          renderer="logarithmicDepthBuffer: true;"
+          embedded
+          arjs='trackingMethod: best; sourceType: webcam; debugUIEnabled: false;'>
+            
+                <a-assets>
+                    <video style="
+                        position: absolute;
+                        top: 100px;
+                        left: 60px;"
+                    src="../../../css/images/somfy-ar.mp4"
+		                preload="auto" 
+		                id="vid" 
+		                response-type="arraybuffer" 
+		                crossorigin 
+                        autoplay
+                        playsinline muted>
+                    </video>
+                </a-assets>
+				<a-video visible="false"  id="video-data" position="20 0 -300" rotation="0 0 0" scale="2 2 2" width='320' height='180' material="shader: chromakey; src: #vid; color: 0.294 1 0"></a-video> 
+				<a-entity camera></a-entity>
+		</a-scene>
+      </div>
+	  <a class="btn btn-primary btn-play" id="btn-play" style="height: 20px;
+      z-index: 101;
+      position: absolute;
+      bottom: 20px;
+      background: #fcad22;
+      color: #fff;
+      left: 12px;
+      padding: 15px;
+      border-radius: 36px;
+      text-align: center;">Play</a>
+      <a class="btn btn-primary btn-skip" id="btn-skip" href="/form.php" style="height: 20px;
+      z-index: 101;
+      position: absolute;
+      width: 60px;
+      bottom: 20px;
+      right: 20px;
+      background: #fff;
+      color: #fcad22;
+      padding: 15px;
+      border-radius: 36px;
+      text-decoration: none;
+      text-align: center;">Skip</a>
+	
+    <script>
+
+    /**
+     * STATS
+     */
+    var statsMain = new Stats();
+    statsMain.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.getElementById( 'stats1' ).appendChild( statsMain.dom );
+
+    var statsWorker = new Stats();
+    statsWorker.showPanel( 0 ); // 0: fps, 1: ms, 2: mb, 3+: custom
+    document.getElementById( 'stats2' ).appendChild( statsWorker.dom );
+
+    /**
+     * APP / ELEMENTS
+     */
+   
+    var container = document.getElementById( 'app' );
+    var video = document.getElementById( 'video' );
+    var canvas = document.getElementById( 'canvas' );
+
+    var video_data = document.getElementById( 'vid' );
+    
+    //var vid = document.querySelector("#vid");
+    //vid.pause();
+
+    /**
+     * APP / VIDEO STREAM
+     */
+
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          var hint = {
+              audio: false,
+              video: { facingMode: 'environment'}
+          };
+
+          navigator.mediaDevices.getUserMedia( hint ).then( function( stream ) {
+              video.srcObject = stream;
+              video.addEventListener( 'loadedmetadata', function() {
+                  //video.play();
+
+                  console.log( 'video', video, video.videoWidth, video.videoHeight );
+
+                  start(
+                      container,
+                      markers['pinball'],
+                      video,
+                      video.videoWidth,
+                      video.videoHeight,
+                      canvas,
+                      function() {
+                          statsMain.update()
+                      },
+                      function() {
+                          statsWorker.update();
+                      },
+                      null
+                  );
+              } );
+          } );
+      }
+      
+        document.getElementById("btn-play").addEventListener('click', function(ev){
+            ev.preventDefault();
+            video_data.muted = false;
+            video_data.play();
+        });
+    </script>
+</body>
+
+</html>
